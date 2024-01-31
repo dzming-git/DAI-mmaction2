@@ -3,7 +3,6 @@
 protos=(
     image_harmony
     service_coordinator
-    target_detection
     target_tracking
     behavior_recognition
 )
