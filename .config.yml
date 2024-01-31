@@ -1,0 +1,10 @@
+service:
+  name: behavior recognition
+  port: 5000
+  tags: 
+    - interface:gRPC
+    - algorithm:mmaction2
+
+consul:
+  ip: 10.0.0.2
+  port: 8500
