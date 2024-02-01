@@ -4,3 +4,6 @@
 [submodule "src/consul"]
 	path = src/consul
 	url = https://github.com/dzming-git/DAI-consul-python.git
+[submodule "mmaction2"]
+	path = mmaction2
+	url = https://github.com/open-mmlab/mmaction2.git
