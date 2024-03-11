@@ -16,8 +16,8 @@ class Config:
         self.service_name: str = ''
         self.service_port: str = ''
         self.service_tags: List[str] = list()
-        self.weights_folder: str = ''
-
+        self.weights_info: str = ''
+        
         #consul
         self.consul_ip: str
         self.consul_port: str
@@ -32,7 +32,7 @@ class Config:
         self.service_name = service_data.get('name', '')
         self.service_port = str(service_data.get('port', ''))
         self.service_tags = service_data.get('tags', [])
-        self.weights_folder = service_data.get('weights_folder', './weights')
+        self.weights_info = service_data.get('weights_info', './weights_info.yml')
         consul_data = config_data.get('consul', {})
         self.consul_ip = consul_data.get('ip', '')
         self.consul_port = consul_data.get('port', '')

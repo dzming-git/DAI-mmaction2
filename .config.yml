@@ -4,8 +4,8 @@ service:
   tags: 
     - interface:gRPC
     - algorithm:mmaction2
-  weights_folder: ./weights
+  weights_info: ./weights_info.yml
 
 consul:
-  ip: 10.0.0.2
+  ip: 10.10.10.2
   port: 8500
