@@ -10,3 +10,8 @@ protobuf==4.21.6
 
 # tools ------------------------------------------------------------------------
 pyyaml
+
+# mmaction ---------------------------------------------------------------------
+openmim
+mmengine
+# pip install mmcv==2.0.0 -f https://download.openmmlab.com/mmcv/dist/cu117/torch2.0/index.html
