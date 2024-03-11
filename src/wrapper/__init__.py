@@ -1,0 +1,1 @@
+from .mmaction2_recognizer import Mmaction2Recognizer
