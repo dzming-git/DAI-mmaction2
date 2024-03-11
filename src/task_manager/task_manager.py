@@ -3,7 +3,7 @@ from typing import Dict, Tuple, List
 from queue import Queue
 from src.grpc.clients.image_harmony.image_harmony_client import ImageHarmonyClient
 from src.grpc.clients.target_tracking.target_tracking_client import TargetTrackingClient
-from src.wrapper import Mmaction2Recognizer
+from src.wrapper_test import Mmaction2Recognizer
 from src.config.config import Config
 import _thread
 import traceback
@@ -43,11 +43,8 @@ class TaskInfo:
         self.target_tracking_address: List[str, str] = []
         self.target_tracking_client: TargetTrackingClient = None
 
-        self.weights_folder = config.weights_folder
-        self.config = 'configs/detection/ava/slowfast_temporal_max_focal_alpha3_gamma1_kinetics_pretrained_r50_8x8x1_cosine_10e_ava22_rgb.py'
-        self.weight: str = 'slowfast_temporal_max_focal_alpha3_gamma1_kinetics_pretrained_r50_8x8x1_cosine_10e_ava22_rgb-345618cd.pth'
+        self.weights: str = ''
         self.device: str = ''
-        self.max_tracking_length: int = 10
         self.image_id_queue: Queue[int] = Queue()
         self.recognizer: Mmaction2Recognizer = None
     
@@ -85,16 +82,16 @@ class TaskInfo:
         self.image_harmony_client.set_loader_args_hash(self.loader_args_hash)
         builder = Mmaction2Recognizer.Mmaction2Builder()
         self.recognizer = builder.build()
-        self.tracker.max_tracking_length = self.max_tracking_length
-        self.target_tracking_client.set_track_target_label(self.target_label)
+
         self.stop = False
         # _thread.start_new_thread(self.progress, ())
         # TODO 临时版本
-        _thread.start_new_thread(self.track_by_image_id, ())
+        _thread.start_new_thread(self.recognize_by_image_id, ())
     
-    def track_by_image_id(self):
-        assert self.tracker, 'tracker is not set\n'
+    def recognize_by_image_id(self):
+        assert self.recognizer, 'recognizer is not set\n'
         assert self.image_harmony_client, 'image harmony client is not set\n'
+        assert self.target_tracking_client, 'target tracking client is not set\n'
         while not self.stop:
             image_id_in_queue = self.image_id_queue.get()
             width, height = self.image_harmony_client.get_image_size_by_image_id(image_id_in_queue)

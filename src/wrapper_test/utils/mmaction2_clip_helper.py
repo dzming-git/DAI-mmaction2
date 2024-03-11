@@ -8,7 +8,7 @@ import cv2
 import mmcv
 import numpy as np
 
-from src.wrapper.utils import Mmaction2TaskInfo
+from src.wrapper_test.utils import Mmaction2TaskInfo
 
 class Mmaction2ClipHelper:
     """Multithrading utils to manage the lifecycle of task."""
