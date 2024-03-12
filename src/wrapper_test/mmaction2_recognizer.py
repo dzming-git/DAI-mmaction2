@@ -1,5 +1,4 @@
 from src.wrapper_test.utils import *
-from src.utils import temporary_change_dir
 from mmengine import Config
 import time
 import torch
@@ -105,13 +104,12 @@ class Mmaction2Recognizer:
             self.__device,
             self.__det_score_thr)
 
-        with temporary_change_dir('mmaction2'):
-            self.__stdet_predictor = Mmaction2StdetPredictor(
-                config=self.__config,
-                checkpoint=self.__checkpoint,
-                device=self.__device,
-                score_thr=self.__action_score_thr,
-                label_map_path=self.__label_map)
+        self.__stdet_predictor = Mmaction2StdetPredictor(
+            config=self.__config,
+            checkpoint=self.__checkpoint,
+            device=self.__device,
+            score_thr=self.__action_score_thr,
+            label_map_path=self.__label_map)
 
         # init clip helper
         self.__clip_helper = Mmaction2ClipHelper(

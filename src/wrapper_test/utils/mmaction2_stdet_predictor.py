@@ -1,6 +1,10 @@
+SUBMODULE_DIR = '/workspace/mmaction2'
+
 import torch
 from mmdet.apis import init_detector
+from src.utils import class_temporary_change_dir
 
+@class_temporary_change_dir(SUBMODULE_DIR)
 class Mmaction2StdetPredictor:
     """Wrapper for MMAction2 spatio-temporal action models.
 

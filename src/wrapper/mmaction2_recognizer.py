@@ -1,4 +1,3 @@
-from src.utils import temporary_change_dir
 from src.wrapper.utils import *
 from mmengine import Config
 import time
@@ -68,13 +67,12 @@ class Mmaction2Recognizer:
         self.__predict_stepsize: int = builder.predict_stepsize
         
         
-        with temporary_change_dir('mmaction2'):
-            self.__stdet_predictor = Mmaction2StdetPredictor(
-                config=self.__config,
-                checkpoint=self.__checkpoint,
-                device=self.__device,
-                score_thr=self.__action_score_thr,
-                label_map_path=self.__label_map)
+        self.__stdet_predictor = Mmaction2StdetPredictor(
+            config=self.__config,
+            checkpoint=self.__checkpoint,
+            device=self.__device,
+            score_thr=self.__action_score_thr,
+            label_map_path=self.__label_map)
         
     def __load_config(self, config_path: str) -> Config:
         # init action detector
