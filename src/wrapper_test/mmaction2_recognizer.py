@@ -1,3 +1,5 @@
+from src.wrapper_test.utils import *
+from src.utils import temporary_change_dir
 from mmengine import Config
 import time
 import torch
@@ -5,7 +7,7 @@ import torch
 import warnings
 warnings.filterwarnings('always')
 
-from src.wrapper_test.utils import *
+
 
 class Mmaction2Recognizer:
     class Mmaction2Builder:
@@ -96,7 +98,6 @@ class Mmaction2Recognizer:
         
         # 预测步长
         self.__predict_stepsize: int = builder.predict_stepsize
-        
         # 模块
         self.__human_detector = Mmaction2HumanDetector(
             self.__det_config, 
@@ -104,12 +105,13 @@ class Mmaction2Recognizer:
             self.__device,
             self.__det_score_thr)
 
-        self.__stdet_predictor = Mmaction2StdetPredictor(
-            config=self.__config,
-            checkpoint=self.__checkpoint,
-            device=self.__device,
-            score_thr=self.__action_score_thr,
-            label_map_path=self.__label_map)
+        with temporary_change_dir('mmaction2'):
+            self.__stdet_predictor = Mmaction2StdetPredictor(
+                config=self.__config,
+                checkpoint=self.__checkpoint,
+                device=self.__device,
+                score_thr=self.__action_score_thr,
+                label_map_path=self.__label_map)
 
         # init clip helper
         self.__clip_helper = Mmaction2ClipHelper(
