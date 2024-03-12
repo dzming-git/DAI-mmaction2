@@ -3,7 +3,8 @@ service:
   port: 5000
   tags: 
     - interface:gRPC
-    - algorithm:mmaction2
+    - platform:mmaction2
+    - algorithm:SlowFast
   weights_info: ./weights_info.yml
 
 consul:
