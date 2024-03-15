@@ -13,7 +13,7 @@ import numpy as np
 import threading
 import warnings
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Tuple
 warnings.filterwarnings('always')
 
 # step说明
@@ -52,7 +52,7 @@ class Mmaction2Recognizer:
             self.action_score_thr: float = 0.4
             
             # label map file
-            self.__label_map: str = ''
+            self.label_map: str = ''
             
             # CPU/CUDA device option
             self.device: str = 'cuda:0'
@@ -73,10 +73,9 @@ class Mmaction2Recognizer:
     class ImageInfo:
         image_id = 0
         image = None
-        processed_image = None
-        stdet_input_size: tuple = (0, 0)
+        stdet_input_size: Tuple[int, int] = (0, 0)
         person_bboxes: Dict[int, torch.Tensor] = {}
-        preds = []
+        preds: Dict[int, List[Tuple[str, float]]] = {}
         step = ADD_IMAGE_ID_COMPLETE
         lock = threading.Lock()
         
@@ -291,22 +290,29 @@ class Mmaction2Recognizer:
             self.__image_infos[image_id].person_bboxes[person_id] = bboxes
         
         self.__image_infos[image_id].step = ADD_BBOXES_COMPLETE
-        
-    def predict_by_image_id(self, image_id: int) -> bool:
-        if not self.check_image_id_exist(image_id):
-            warnings.warn(f"image id {image_id} not found", UserWarning)
+    
+    def get_key_image_id(self) -> int:
+        if len(self.__image_infos) != self.__window_size:
+            warnings.warn(f"图像缓存数量不足，需要 {self.__window_size}，当前 {len(self.__image_infos)}", UserWarning)
+            return 0
+        key_image_id = self.__image_id_queue[self.__window_size // 2]
+        return key_image_id
+    
+    def predict_by_image_id(self, key_image_id: int) -> bool:
+        if not self.check_image_id_exist(key_image_id):
+            warnings.warn(f"image id {key_image_id} not found", UserWarning)
             return False
-        if self.__image_infos[image_id].step != ADD_BBOXES_COMPLETE:
-            print(self.__image_infos[image_id].step)
+        if self.__image_infos[key_image_id].step != ADD_BBOXES_COMPLETE:
+            print(self.__image_infos[key_image_id].step)
             warnings.warn("步骤顺序错误", UserWarning)
             return False
-        self.__image_infos[image_id].step = BEHIAVIOR_RECOGNIZE_START
+        self.__image_infos[key_image_id].step = BEHIAVIOR_RECOGNIZE_START
         
         if len(self.__image_infos) != self.__window_size:
             warnings.warn(f"图像缓存数量不足，需要 {self.__window_size}，当前 {len(self.__image_infos)}", UserWarning)
             return False
         
-        if 0 == len(self.__image_infos[image_id].person_bboxes):
+        if 0 == len(self.__image_infos[key_image_id].person_bboxes):
             return True
         
         with torch.no_grad():
@@ -315,8 +321,6 @@ class Mmaction2Recognizer:
             input_tensor = torch.from_numpy(input_array).to(self.__device_str)
             
             datasample = ActionDataSample()
-            # 查找key帧
-            key_image_id = self.__image_id_queue[self.__window_size // 2]
             bboxes = []
             key_image_info = self.__image_infos[key_image_id]
             stdet_input_w, stdet_input_h = key_image_info.stdet_input_size
@@ -341,8 +345,17 @@ class Mmaction2Recognizer:
                 if scores[bbox_id][class_id] > self.__action_score_thr:
                     preds[bbox_id].append((self.__label_map[class_id],
                                            scores[bbox_id][class_id].item()))
-        self.__image_infos[key_image_id].preds = preds
+        for idx, person_id in enumerate(key_image_info.person_bboxes.keys()):
+            key_image_info.preds[person_id] = preds[idx]
         self.latest_predict_completed_image_id = key_image_id
-        self.__image_infos[image_id].step = BEHIAVIOR_RECOGNIZE_COMPLETE
+        key_image_info.step = BEHIAVIOR_RECOGNIZE_COMPLETE
         
-        
+    def get_result_by_image_id(self, image_id: int) -> Dict[int, List[Tuple[str, float]]]:
+        if not self.check_image_id_exist(image_id):
+            warnings.warn(f"image id {image_id} not found", UserWarning)
+            return {}
+        if self.__image_infos[image_id].step != BEHIAVIOR_RECOGNIZE_COMPLETE:
+            print(self.__image_infos[image_id].step)
+            warnings.warn("步骤顺序错误", UserWarning)
+            return {}
+        return self.__image_infos[image_id].preds
