@@ -127,6 +127,14 @@ class Mmaction2Recognizer:
         self.latest_add_image_id: int = 0
         
     def __load_config(self, config_path: str) -> Config:
+        """加载配置
+
+        Args:
+            config_path (str): 配置文件路径
+
+        Returns:
+            Config: 配置对象
+        """
         # init action detector
         config = Config.fromfile(config_path)
 
@@ -139,6 +147,11 @@ class Mmaction2Recognizer:
         return config
     
     def load_model(self) -> bool:
+        """加载模型
+
+        Returns:
+            bool: 是否加载成功
+        """
         try:
             with temporary_change_dir(SUBMODULE_DIR):
                 self.__model = init_detector(self.__config, self.__checkpoint, device=self.__device_str)
@@ -163,9 +176,25 @@ class Mmaction2Recognizer:
         return True
     
     def check_image_id_exist(self, image_id: int) -> bool:
+        """检查图像id是否存在
+
+        Args:
+            image_id (int): 图像id
+
+        Returns:
+            bool: 图像id是否存在
+        """
         return image_id in self.__image_infos
     
     def add_image_id(self, image_id: int) -> bool:
+        """添加图像id
+
+        Args:
+            image_id (int): 图像id
+
+        Returns:
+            bool: 是否添加成功
+        """
         if self.check_image_id_exist(image_id):
             warnings.warn("image_id 重复添加", UserWarning)
             return False
@@ -236,7 +265,7 @@ class Mmaction2Recognizer:
 
         Args:
             image_id (int): 图像id
-            person_bboxes (Dict[int, np.ndarray]): 人的bboxes float32 person_id: [x1, y1, x2, y2]
+            person_bboxes (Dict[int, List[float]]): 人的bboxes float32 格式： person_id: [x1, y1, x2, y2]
 
         Returns:
             bool: 是否添加成功
