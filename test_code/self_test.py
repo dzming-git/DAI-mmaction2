@@ -1,12 +1,18 @@
-from src.wrapper_test import Mmaction2Recognizer
+from tests.wrapper_test import Mmaction2Recognizer
 
 builder = Mmaction2Recognizer.Mmaction2Builder()
 
+# # spatio temporal detection config file path
+# builder.config = '/workspace/mmaction2/configs/detection/slowonly/slowonly_kinetics400-pretrained-r101_8xb16-8x8x1-20e_ava21-rgb.py'
+
+# # spatio temporal detection checkpoint file/url
+# builder.checkpoint = '/workspace/weights/slowonly_omnisource_pretrained_r101_8x8x1_20e_ava_rgb_20201217-16378594.pth'
+
 # spatio temporal detection config file path
-builder.config = '/workspace/mmaction2/configs/detection/slowonly/slowonly_kinetics400-pretrained-r101_8xb16-8x8x1-20e_ava21-rgb.py'
+builder.config = '/workspace/mmaction2/configs/detection/slowfast/slowfast_r50-k400-pre-temporal-max-focal-alpha3-gamma1_8xb6-8x8x1-cosine-10e_ava22-rgb.py'
 
 # spatio temporal detection checkpoint file/url
-builder.checkpoint = '/workspace/weights/slowonly_omnisource_pretrained_r101_8x8x1_20e_ava_rgb_20201217-16378594.pth'
+builder.checkpoint = '/workspace/weights/slowfast_temporal_max_focal_alpha3_gamma1_kinetics_pretrained_r50_8x8x1_cosine_10e_ava22_rgb-345618cd.pth'
 
 # the threshold of human detection score
 builder.det_score_thr = 0.9

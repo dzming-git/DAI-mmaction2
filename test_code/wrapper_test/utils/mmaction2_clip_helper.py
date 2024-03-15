@@ -8,7 +8,7 @@ import cv2
 import mmcv
 import numpy as np
 
-from src.wrapper_test.utils import Mmaction2TaskInfo
+from test_code.wrapper_test.utils import Mmaction2TaskInfo
 
 class Mmaction2ClipHelper:
     """Multithrading utils to manage the lifecycle of task."""
@@ -121,7 +121,6 @@ class Mmaction2ClipHelper:
         3) Put task into read queue.
         """
         was_read = True
-        start_time = time.time()
         while was_read and not self.stopped:
             # init task
             task = Mmaction2TaskInfo()

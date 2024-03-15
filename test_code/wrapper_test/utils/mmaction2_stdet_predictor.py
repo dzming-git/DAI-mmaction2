@@ -4,6 +4,8 @@ import torch
 from mmdet.apis import init_detector
 from src.utils import class_temporary_change_dir
 
+from test_code.wrapper_test.utils import Mmaction2TaskInfo
+
 @class_temporary_change_dir(SUBMODULE_DIR)
 class Mmaction2StdetPredictor:
     """Wrapper for MMAction2 spatio-temporal action models.
@@ -45,14 +47,15 @@ class Mmaction2StdetPredictor:
         except KeyError:
             pass
 
-    def predict(self, task):
+    def predict(self, task: Mmaction2TaskInfo):
         """Spatio-temporval Action Detection model inference."""
         # No need to do inference if no one in keyframe
         if len(task.stdet_bboxes) == 0:
             return task
 
         with torch.no_grad():
-            result = self.model(**task.get_model_inputs(self.device))
+            a = task.get_model_inputs(self.device)
+            result = self.model(**a)
         scores = result[0].pred_instances.scores
         # pack results of human detector and stdet
         preds = []

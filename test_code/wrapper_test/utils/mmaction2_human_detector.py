@@ -10,6 +10,8 @@ except (ImportError, ModuleNotFoundError):
                       '`init_detector` form `mmdet.apis`. These apis are '
                       'required in this demo! ')
 
+from test_code.wrapper_test.utils import Mmaction2TaskInfo
+
 class BaseHumanDetector(metaclass=ABCMeta):
     """Base class for Human Dector.
 
@@ -27,7 +29,7 @@ class BaseHumanDetector(metaclass=ABCMeta):
         The format of bboxes is (xmin, ymin, xmax, ymax) in pixels.
         """
 
-    def predict(self, task):
+    def predict(self, task: Mmaction2TaskInfo):
         """Add keyframe bboxes to task."""
         # keyframe idx == (clip_len * frame_interval) // 2
         keyframe = task.frames[len(task.frames) // 2]

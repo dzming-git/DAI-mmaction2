@@ -1,4 +1,4 @@
-from src.wrapper_test.utils import *
+from test_code.wrapper_test.utils import *
 from mmengine import Config
 import time
 import torch
@@ -150,7 +150,7 @@ class Mmaction2Recognizer:
             # 3) draw stdet predictions and update task
             # 4) put task into display queue
             for able_to_read, task in self.__clip_helper:
-                # get data from read queue
+                # get data from read  queue
 
                 if not able_to_read:
                     # read thread is dead and all tasks are processed
@@ -160,8 +160,6 @@ class Mmaction2Recognizer:
                     # when no data in read queue, wait
                     time.sleep(0.01)
                     continue
-
-                inference_start = time.time()
 
                 # get human bboxes
                 self.__human_detector.predict(task)
