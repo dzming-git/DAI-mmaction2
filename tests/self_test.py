@@ -1,4 +1,4 @@
-from test_code.wrapper_test import Mmaction2Recognizer
+from tests.wrapper_test import Mmaction2Recognizer
 
 builder = Mmaction2Recognizer.Mmaction2Builder()
 

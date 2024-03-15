@@ -10,7 +10,7 @@ except (ImportError, ModuleNotFoundError):
                       '`init_detector` form `mmdet.apis`. These apis are '
                       'required in this demo! ')
 
-from test_code.wrapper_test.utils import Mmaction2TaskInfo
+from tests.wrapper_test.utils import Mmaction2TaskInfo
 
 class BaseHumanDetector(metaclass=ABCMeta):
     """Base class for Human Dector.

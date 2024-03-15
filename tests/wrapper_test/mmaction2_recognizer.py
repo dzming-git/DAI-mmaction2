@@ -1,12 +1,10 @@
-from test_code.wrapper_test.utils import *
+from tests.wrapper_test.utils import *
 from mmengine import Config
 import time
 import torch
 import torch
 import warnings
 warnings.filterwarnings('always')
-
-
 
 class Mmaction2Recognizer:
     class Mmaction2Builder:

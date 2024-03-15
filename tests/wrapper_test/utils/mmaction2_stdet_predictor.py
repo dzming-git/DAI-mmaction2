@@ -4,7 +4,7 @@ import torch
 from mmdet.apis import init_detector
 from src.utils import class_temporary_change_dir
 
-from test_code.wrapper_test.utils import Mmaction2TaskInfo
+from tests.wrapper_test.utils import Mmaction2TaskInfo
 
 @class_temporary_change_dir(SUBMODULE_DIR)
 class Mmaction2StdetPredictor:
