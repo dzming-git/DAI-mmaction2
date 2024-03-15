@@ -292,6 +292,11 @@ class Mmaction2Recognizer:
         self.__image_infos[image_id].step = ADD_BBOXES_COMPLETE
     
     def get_key_image_id(self) -> int:
+        """获取关键帧的图像id
+
+        Returns:
+            int: 关键帧的图像id, 如果是0则是还未生成关键帧
+        """
         if len(self.__image_infos) != self.__window_size:
             warnings.warn(f"图像缓存数量不足，需要 {self.__window_size}，当前 {len(self.__image_infos)}", UserWarning)
             return 0
@@ -299,6 +304,14 @@ class Mmaction2Recognizer:
         return key_image_id
     
     def predict_by_image_id(self, key_image_id: int) -> bool:
+        """根据图像id进行预测, 目前仅支持输入当前队列的关键帧
+
+        Args:
+            key_image_id (int): 关键帧的图像id
+
+        Returns:
+            bool: 是否检测成功
+        """
         if not self.check_image_id_exist(key_image_id):
             warnings.warn(f"image id {key_image_id} not found", UserWarning)
             return False
@@ -351,6 +364,14 @@ class Mmaction2Recognizer:
         key_image_info.step = BEHIAVIOR_RECOGNIZE_COMPLETE
         
     def get_result_by_image_id(self, image_id: int) -> Dict[int, List[Tuple[str, float]]]:
+        """根据图像id获取结果
+
+        Args:
+            image_id (int): 图像id
+
+        Returns:
+            Dict[int, List[Tuple[str, float]]]: 结果, 字典的key为person_id, 结果是Tuple(行为, 置信度)的列表
+        """
         if not self.check_image_id_exist(image_id):
             warnings.warn(f"image id {image_id} not found", UserWarning)
             return {}
