@@ -13,6 +13,7 @@ import numpy as np
 import threading
 import warnings
 import traceback
+import copy
 from typing import Dict, List, Tuple
 warnings.filterwarnings('always')
 
@@ -74,7 +75,8 @@ class Mmaction2Recognizer:
         image_id = 0
         image = None
         stdet_input_size: Tuple[int, int] = (0, 0)
-        person_bboxes: Dict[int, torch.Tensor] = {}
+        origin_person_bboxes: Dict[int, List[float]] = {}
+        processed_person_bboxes: Dict[int, torch.Tensor] = {}
         preds: Dict[int, List[Tuple[str, float]]] = {}
         step = ADD_IMAGE_ID_COMPLETE
         lock = threading.Lock()
@@ -91,9 +93,6 @@ class Mmaction2Recognizer:
         self.__action_score_thr: float = builder.action_score_thr
         self.__checkpoint: str = builder.checkpoint
         self.__label_map: str = builder.label_map
-        
-        # 预测步长
-        self.__predict_stepsize: int = builder.predict_stepsize
         
         # 窗口大小
         val_pipeline = self.__config.val_pipeline
@@ -184,6 +183,19 @@ class Mmaction2Recognizer:
             bool: 图像id是否存在
         """
         return image_id in self.__image_infos
+    
+    def get_step_by_image_id(self, image_id: int) -> int:
+        """获取当前阶段
+        Args:
+            image_id (int): 图像id
+
+        Returns:
+            int: 阶段ID, 特殊的： -1图像不存在 0检测完成
+        """
+        if not self.check_image_id_exist(image_id):
+            warnings.warn("image_id 不存在", UserWarning)
+            return -1
+        return self.__image_infos[image_id].step
     
     def add_image_id(self, image_id: int) -> bool:
         """添加图像id
@@ -278,6 +290,7 @@ class Mmaction2Recognizer:
             warnings.warn("步骤顺序错误", UserWarning)
             return False
         self.__image_infos[image_id].step = ADD_BBOXES_START
+        self.__image_infos[image_id].origin_person_bboxes = copy.deepcopy(person_bboxes)
         h, w, _ = self.__image_infos[image_id].image.shape
         ratio = tuple(
             n / o for n, o in zip(self.__image_infos[image_id].stdet_input_size, (w, h)))
@@ -287,7 +300,7 @@ class Mmaction2Recognizer:
             bboxes = torch.from_numpy(person_bbox).to(self.__device_torch)
             bboxes[::2] = bboxes[::2] * ratio[0] * w
             bboxes[1::2] = bboxes[1::2] * ratio[1] * h
-            self.__image_infos[image_id].person_bboxes[person_id] = bboxes
+            self.__image_infos[image_id].processed_person_bboxes[person_id] = bboxes
         
         self.__image_infos[image_id].step = ADD_BBOXES_COMPLETE
     
@@ -325,7 +338,7 @@ class Mmaction2Recognizer:
             warnings.warn(f"图像缓存数量不足，需要 {self.__window_size}，当前 {len(self.__image_infos)}", UserWarning)
             return False
         
-        if 0 == len(self.__image_infos[key_image_id].person_bboxes):
+        if 0 == len(self.__image_infos[key_image_id].processed_person_bboxes):
             return True
         
         with torch.no_grad():
@@ -337,7 +350,7 @@ class Mmaction2Recognizer:
             bboxes = []
             key_image_info = self.__image_infos[key_image_id]
             stdet_input_w, stdet_input_h = key_image_info.stdet_input_size
-            for bbox in key_image_info.person_bboxes.values():
+            for bbox in key_image_info.processed_person_bboxes.values():
                 bboxes.append(bbox.unsqueeze(0))
             bboxes_tensor = torch.cat(bboxes, dim=0)
             datasample.proposals = InstanceData(bboxes=bboxes_tensor)
@@ -358,7 +371,7 @@ class Mmaction2Recognizer:
                 if scores[bbox_id][class_id] > self.__action_score_thr:
                     preds[bbox_id].append((self.__label_map[class_id],
                                            scores[bbox_id][class_id].item()))
-        for idx, person_id in enumerate(key_image_info.person_bboxes.keys()):
+        for idx, person_id in enumerate(key_image_info.processed_person_bboxes.keys()):
             key_image_info.preds[person_id] = preds[idx]
         self.latest_predict_completed_image_id = key_image_id
         key_image_info.step = BEHIAVIOR_RECOGNIZE_COMPLETE
@@ -380,3 +393,17 @@ class Mmaction2Recognizer:
             warnings.warn("步骤顺序错误", UserWarning)
             return {}
         return self.__image_infos[image_id].preds
+    
+    def get_image_info_by_image_id(self, image_id: int) -> ImageInfo:
+        """获取图像信息
+
+        Args:
+            image_id (int): 图像id
+
+        Returns:
+            ImageInfo: 图像信息
+        """
+        if not self.check_image_id_exist(image_id):
+            warnings.warn(f"image id {image_id} not found", UserWarning)
+            return None
+        return self.__image_infos[image_id]

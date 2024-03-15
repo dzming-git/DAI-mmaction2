@@ -3,9 +3,11 @@ from src.config.config import Config
 from src.grpc.servers.grpc_server_builder import GRPCServerBuilder
 import time
 from src.grpc.servers.service_coordinator.service_coordinator_server import ServiceCoordinatorServer
+from src.grpc.servers.behavior_recognition.behavior_recognition_server import BehaviorRecognitionServer
 import yaml
 
 service_coordinator_server = ServiceCoordinatorServer()
+behavior_recognition_server = BehaviorRecognitionServer()
 config = Config()
 gRPCServer = None
 
@@ -43,6 +45,7 @@ def gRPC_server_start():
     gRPCServerBuilder = GRPCServerBuilder()
     gRPCServer = gRPCServerBuilder.build()
     service_coordinator_server.join_in_server(gRPCServer)
+    behavior_recognition_server.join_in_server(gRPCServer)
     gRPCServer.start()
 
 if __name__ == '__main__':

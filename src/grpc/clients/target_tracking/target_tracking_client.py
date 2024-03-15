@@ -16,7 +16,7 @@ class TargetTrackingClient:
         self.task_id = task_id
     
     # 只获取 label == 'person' 的结果
-    def get_result_by_image_id(self, image_id: int) -> List[List[float]]:
+    def get_result_by_image_id(self, image_id: int) -> Dict[int, List[float]]:
         request = target_tracking_pb2.GetResultByImageIdRequest()
         request.taskId = self.task_id
         request.imageId = image_id

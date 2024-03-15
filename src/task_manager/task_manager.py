@@ -3,7 +3,7 @@ from typing import Dict, Tuple, List
 from queue import Queue
 from src.grpc.clients.image_harmony.image_harmony_client import ImageHarmonyClient
 from src.grpc.clients.target_tracking.target_tracking_client import TargetTrackingClient
-from src.wrapper_test import Mmaction2Recognizer
+from src.wrapper import Mmaction2Recognizer
 from src.config.config import Config
 import _thread
 import traceback
@@ -78,17 +78,17 @@ class TaskInfo:
             return False, error_info
         return True, 'OK'
     
-    def start(self):
+    def start(self) -> Tuple[bool, str]:
         self.image_harmony_client.set_loader_args_hash(self.loader_args_hash)
         builder = Mmaction2Recognizer.Mmaction2Builder()
         self.recognizer = builder.build()
-
+        if not self.recognizer.load_model():
+            return False, 'recognizer.load_model() failed'
         self.stop = False
-        # _thread.start_new_thread(self.progress, ())
-        # TODO 临时版本
-        _thread.start_new_thread(self.recognize_by_image_id, ())
+        _thread.start_new_thread(self.auto_recognize, ())
+        return True, 'OK'
     
-    def recognize_by_image_id(self):
+    def auto_recognize(self):
         assert self.recognizer, 'recognizer is not set\n'
         assert self.image_harmony_client, 'image harmony client is not set\n'
         assert self.target_tracking_client, 'target tracking client is not set\n'
@@ -102,12 +102,22 @@ class TaskInfo:
             image_id, image = self.image_harmony_client.get_image_by_image_id(image_id_in_queue, new_width, new_height)
             if 0 == image_id:
                 continue
-            bboxs = self.target_tracking_client.get_result_by_image_id(image_id)
-            if not self.tracker.add_image_and_bboxes(image_id, image, bboxs):
+            bboxes = self.target_tracking_client.get_result_by_image_id(image_id)
+            if not self.recognizer.add_image_id(image_id):
                 continue
-            result = self.tracker.get_result_by_uid(image_id)
-            print(result)
-                                                                                                                                           
+            if not self.recognizer.add_image(image_id, image):
+                continue
+            if not self.recognizer.add_person_bboxes(image_id, bboxes):
+                continue
+            key_image_id = self.recognizer.get_key_image_id()
+            if 0 == key_image_id:
+                continue
+            if not self.recognizer.predict_by_image_id(key_image_id):
+                continue
+            result = self.recognizer.get_result_by_image_id(key_image_id)
+            if len(result):
+                print(f'image id: {image_id}\npreds: {result}')
+                                                                                                                                         
 @singleton
 class TaskManager:
     def __init__(self):
