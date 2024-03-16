@@ -72,6 +72,7 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
                 label_info_proto = result_proto.labelInfos.add()
                 label_info_proto.label = label
                 label_info_proto.confidence = confidence
+            result_proto.personId = person_id
             person_bbox = person_bboxes[person_id]
             result_proto.x1 = person_bbox[0]
             result_proto.y1 = person_bbox[1]
@@ -126,6 +127,7 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
                 label_info_proto = result_proto.labelInfos.add()
                 label_info_proto.label = label
                 label_info_proto.confidence = confidence
+            result_proto.personId = person_id
             person_bbox = person_bboxes[person_id]
             result_proto.x1 = person_bbox[0]
             result_proto.y1 = person_bbox[1]
