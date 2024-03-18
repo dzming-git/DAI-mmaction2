@@ -58,9 +58,6 @@ class Mmaction2Recognizer:
             # CPU/CUDA device option
             self.device: str = 'cuda:0'
             
-            # give out a prediction per n frames
-            self.predict_stepsize: int = 8
-            
             # 设置目标输入的短边长度
             self.stdet_input_shortside = 256
             
@@ -270,6 +267,7 @@ class Mmaction2Recognizer:
         
         # 标记状态
         self.__image_infos[image_id].step = ADD_IMAGE_COMPLETE
+        return True
     
     def add_person_bboxes(self, image_id: int, person_bboxes: Dict[int, List[float]]) -> bool:
         """添加人的bboxes
@@ -303,6 +301,7 @@ class Mmaction2Recognizer:
             self.__image_infos[image_id].processed_person_bboxes[person_id] = bboxes
         
         self.__image_infos[image_id].step = ADD_BBOXES_COMPLETE
+        return True
     
     def get_key_image_id(self) -> int:
         """获取关键帧的图像id
@@ -375,6 +374,7 @@ class Mmaction2Recognizer:
             key_image_info.preds[person_id] = preds[idx]
         self.latest_predict_completed_image_id = key_image_id
         key_image_info.step = BEHIAVIOR_RECOGNIZE_COMPLETE
+        return True
         
     def get_result_by_image_id(self, image_id: int) -> Dict[int, List[Tuple[str, float]]]:
         """根据图像id获取结果
