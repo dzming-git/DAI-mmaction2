@@ -42,9 +42,6 @@ builder.label_map = '/workspace/mmaction2/tools/data/ava/label_map.txt'
 
 # CPU/CUDA device option
 builder.device = 'cuda:0'
-
-# give out a prediction per n frames
-builder.predict_stepsize = 8
  
 recognizer = builder.build()
 if not recognizer.load_model():
