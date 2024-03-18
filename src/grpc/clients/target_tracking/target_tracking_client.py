@@ -1,8 +1,6 @@
 from generated.protos.target_tracking import target_tracking_pb2, target_tracking_pb2_grpc
 import grpc
-import cv2
-from typing import Dict, Tuple, List
-import numpy as np
+from typing import Dict, List
 
 class TargetTrackingClient:
     def __init__(self, ip:str, port: str, taskId: int):
@@ -21,6 +19,7 @@ class TargetTrackingClient:
         request.taskId = self.task_id
         request.imageId = image_id
         request.wait = True
+        request.onlyTheLatest = True
         response = self.client.getResultByImageId(request)
         if 200 != response.response.code:
             print(f'{response.response.code}: {response.response.message}')
@@ -31,11 +30,12 @@ class TargetTrackingClient:
                 continue
             id = result.id
             bboxs = result.bboxs
-            results[id] = []
-            for bbox in bboxs:
-                x1 = bbox.x1
-                y1 = bbox.y1
-                x2 = bbox.x2
-                y2 = bbox.y2
-                results[id].append([x1, y1, x2, y2])
+            # 直接访问最后一个bbox，前提是我们确信至少有一个bbox
+            if bboxs:  # 确保bboxs列表不为空
+                last_bbox = bboxs[-1]  # 获取最后一个bbox
+                x1 = last_bbox.x1
+                y1 = last_bbox.y1
+                x2 = last_bbox.x2
+                y2 = last_bbox.y2
+                results[id] = [x1, y1, x2, y2]  # 直接将最后一个bbox作为结果存储
         return results
