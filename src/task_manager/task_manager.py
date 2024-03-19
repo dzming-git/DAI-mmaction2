@@ -34,7 +34,6 @@ def calculate_scaled_size(width: int, height: int) -> Tuple[int, int]:
 class TaskInfo:
     def __init__(self, taskId: int):
         self.id: int = taskId
-        self.stop: bool = True
         
         self.image_harmony_address: List[str, str] = []
         self.image_harmony_client: ImageHarmonyClient = None
@@ -111,7 +110,6 @@ class TaskInfo:
         loop_counter = 0  # 初始化循环计数器
         with open('timing_info.txt', 'w') as f:  # 打开文件用于写入
             while not self.stop_event.is_set():
-                loop_counter += 1  # 每次循环时增加计数器
                 try:
                     start_time = time.time()
                     image_id_in_queue = self.image_id_queue.get(timeout=1)
@@ -119,7 +117,9 @@ class TaskInfo:
                     f.write(f"Loop {loop_counter}: Getting image_id from queue: {get_queue_time:.5f} seconds\n")
                 except queue.Empty:
                     continue
-
+                
+                loop_counter += 1  # 每次循环时增加计数器
+                
                 start_time = time.time()
                 width, height = self.image_harmony_client.get_image_size_by_image_id(image_id_in_queue)
                 get_image_size_time = time.time() - start_time
