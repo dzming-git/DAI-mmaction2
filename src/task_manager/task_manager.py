@@ -50,7 +50,7 @@ class TaskInfo:
         self.track_thread = None  # 用于跟踪线程的引用
     
     def set_pre_service(self, pre_service_name: str, pre_service_ip: str, pre_service_port: str, args: Dict[str, str]):
-        if 'image harmony' == pre_service_name:
+        if 'image harmony gRPC' == pre_service_name:
             self.image_harmony_address = [pre_service_ip, pre_service_port]
             self.image_harmony_client = ImageHarmonyClient(pre_service_ip, pre_service_port)
             assert 'LoaderArgsHash' in args, 'arg: [LoaderArgsHash] not set'
@@ -58,9 +58,9 @@ class TaskInfo:
         if 'target tracking' == pre_service_name:
             self.target_tracking_address = [pre_service_ip, pre_service_port]
             self.target_tracking_client = TargetTrackingClient(pre_service_ip, pre_service_port, self.id)
+            self.target_tracking_client.filter.add('person')
     
     def set_cur_service(self, args: Dict[str, str]):
-        # TODO weights以后也通过配置文件传
         if 'Device' in args:
             self.device = args['Device']
         if 'Weight' in args:
@@ -104,9 +104,6 @@ class TaskInfo:
         return True, 'OK'
 
     def auto_recognize(self):
-        assert self.recognizer, 'Error: recognizer is not set\n'
-        assert self.image_harmony_client, 'Error: image harmony client is not set\n'
-        assert self.target_tracking_client, 'Error: target tracking client is not set\n'
         loop_counter = 0  # 初始化循环计数器
         with open('timing_info.txt', 'w') as f:  # 打开文件用于写入
             while not self.stop_event.is_set():
@@ -136,14 +133,24 @@ class TaskInfo:
                     continue
 
                 start_time = time.time()
-                bboxes = self.target_tracking_client.get_result_by_image_id(image_id)
+                bboxes = self.target_tracking_client.get_result_by_image_id(image_id, True)
+                bbox_per_person: Dict[int, List[float]] = {}
+                for person_id, bbox in bboxes.items():
+                    if 1 != len(bbox):
+                        continue
+                    bbox_per_person[person_id] = [
+                        bbox[0].x1,
+                        bbox[0].y1,
+                        bbox[0].x2,
+                        bbox[0].y2
+                    ]
                 get_bboxes_time = time.time() - start_time
                 f.write(f"Loop {loop_counter}: Getting bboxes: {get_bboxes_time:.5f} seconds\n")
                 if not self.recognizer.add_image_id(image_id):
                     continue
                 if not self.recognizer.add_image(image_id, image):
                     continue
-                if not self.recognizer.add_person_bboxes(image_id, bboxes):
+                if not self.recognizer.add_person_bboxes(image_id, bbox_per_person):
                     continue
                 
                 start_time = time.time()
