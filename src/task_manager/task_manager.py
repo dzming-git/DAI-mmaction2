@@ -47,7 +47,7 @@ class TaskInfo:
         self.__weight: str = ''
         self.__device_str: str = ''
         self.image_id_queue: queue.Queue[int] = queue.Queue()
-        self.__recognizer: Mmaction2Recognizer = None
+        self.recognizer: Mmaction2Recognizer = None
         self.__stop_event = threading.Event()
         self.__track_thread = None  # 用于跟踪线程的引用
     
@@ -97,8 +97,8 @@ class TaskInfo:
         builder.checkpoint = weight_info['checkpoint']
         builder.label_map = weight_info['label_map']
         builder.device = self.__device_str
-        self.__recognizer = builder.build()
-        self.__recognizer.load_model()
+        self.recognizer = builder.build()
+        self.recognizer.load_model()
         self.__stop_event.clear()  # 确保开始时事件是清除状态
         self.__track_thread = threading.Thread(target=self.auto_recognize)
         self.__track_thread.start()
@@ -115,7 +115,6 @@ class TaskInfo:
                 if 0 == width or 0 == height:
                     continue
                 
-                start_time = time.time()
                 new_width, new_height = calculate_scaled_size(width, height)
                 image_id, image = self.__image_harmony_client.get_image_by_image_id(image_id_in_queue, new_width, new_height)
                 if 0 == image_id:
@@ -132,18 +131,18 @@ class TaskInfo:
                         bbox[0].x2,
                         bbox[0].y2
                     ]
-                if not self.__recognizer.add_image_id(image_id):
+                if not self.recognizer.add_image_id(image_id):
                     continue
-                if not self.__recognizer.add_image(image_id, image):
+                if not self.recognizer.add_image(image_id, image):
                     continue
-                if not self.__recognizer.add_person_bboxes(image_id, bbox_per_person):
+                if not self.recognizer.add_person_bboxes(image_id, bbox_per_person):
                     continue
                 
-                key_image_id = self.__recognizer.get_key_image_id()
+                key_image_id = self.recognizer.get_key_image_id()
                 if 0 == key_image_id:
                     continue
 
-                if not self.__recognizer.predict_by_image_id(key_image_id):
+                if not self.recognizer.predict_by_image_id(key_image_id):
                     continue
 
                 # result = self.recognizer.get_result_by_image_id(key_image_id)           
@@ -156,9 +155,9 @@ class TaskInfo:
         if self.__track_thread:
             self.__track_thread.join()  # 等待线程结束
         self.__image_harmony_client.disconnect_image_loader()
-        if self.__recognizer:
-            del self.__recognizer  # 释放资源
-        self.__recognizer = None
+        if self.recognizer:
+            del self.recognizer  # 释放资源
+        self.recognizer = None
                                                                                                                                          
 @singleton
 class TaskManager:
