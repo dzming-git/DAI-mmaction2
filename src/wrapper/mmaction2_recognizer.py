@@ -141,7 +141,7 @@ class Mmaction2Recognizer:
             pass
         return config
     
-    def load_model(self) -> bool:
+    def load_model(self):
         """加载模型
 
         Returns:
@@ -165,10 +165,8 @@ class Mmaction2Recognizer:
                     }
             except KeyError:
                 pass
-        except:
-                traceback.print_exc()
-                return False
-        return True
+        except Exception as e:
+            raise RuntimeError(f'Error: Load model failed. {str(e)}') from e
     
     def check_image_id_exist(self, image_id: int) -> bool:
         """检查图像id是否存在

@@ -26,7 +26,7 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
             task_id = request.taskId
             image_id = request.imageId
             assert task_id in task_manager.tasks, 'ERROR: The task ID does not exist.\n'
-            recognizer = task_manager.tasks[task_id].recognizer
+            recognizer = task_manager.tasks[task_id].__recognizer
             image_id_exist = recognizer.check_image_id_exist(image_id)
             if not image_id_exist:
                 task_manager.tasks[task_id].image_id_queue.put(image_id)
@@ -56,7 +56,7 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
             task_id = request.taskId
             image_id = request.imageId
             assert task_id in task_manager.tasks, 'ERROR: The task ID does not exist.\n'
-            recognizer = task_manager.tasks[task_id].recognizer
+            recognizer = task_manager.tasks[task_id].__recognizer
             assert recognizer.check_image_id_exist(image_id), 'ERROR: The image ID does not exit.\n'   
             assert recognizer.get_step_by_image_id(image_id) == 0, 'ERROR: Image recognition incomplete.\n'  
             image_info = recognizer.get_image_info_by_image_id(image_id)
@@ -99,7 +99,7 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
         try:
             task_id = request.taskId
             assert task_id in task_manager.tasks, 'ERROR: The task ID does not exist.\n'
-            recognizer = task_manager.tasks[task_id].recognizer
+            recognizer = task_manager.tasks[task_id].__recognizer
             latest_predict_completed_image_id = recognizer.latest_predict_completed_image_id
             latest_add_image_id = recognizer.latest_add_image_id
             

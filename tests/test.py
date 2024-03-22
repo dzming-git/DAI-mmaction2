@@ -44,9 +44,7 @@ builder.label_map = '/workspace/mmaction2/tools/data/ava/label_map.txt'
 builder.device = 'cuda:0'
  
 recognizer = builder.build()
-if not recognizer.load_model():
-    exit()
-
+recognizer.load_model()
 cap = cv2.VideoCapture('/workspace/mmaction2/demo/test_video_structuralize.mp4')
 bboxes = read_detections_from_txt('tests/test_video_structuralize_bboxes.txt')
 
