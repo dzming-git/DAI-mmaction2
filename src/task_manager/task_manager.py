@@ -131,19 +131,16 @@ class TaskInfo:
                         bbox[0].x2,
                         bbox[0].y2
                     ]
-                if not self.recognizer.add_image_id(image_id):
-                    continue
-                if not self.recognizer.add_image(image_id, image):
-                    continue
-                if not self.recognizer.add_person_bboxes(image_id, bbox_per_person):
+                self.recognizer.add_image_id(image_id)
+                self.recognizer.add_image(image_id, image)
+                self.recognizer.add_person_bboxes(image_id, bbox_per_person)
+                
+                if not self.recognizer.ready():
                     continue
                 
                 key_image_id = self.recognizer.get_key_image_id()
-                if 0 == key_image_id:
-                    continue
 
-                if not self.recognizer.predict_by_image_id(key_image_id):
-                    continue
+                self.recognizer.predict_by_image_id(key_image_id)
 
                 # result = self.recognizer.get_result_by_image_id(key_image_id)           
             except Exception as e:

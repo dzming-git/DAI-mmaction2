@@ -1,6 +1,5 @@
 from generated.protos.behavior_recognition import behavior_recognition_pb2, behavior_recognition_pb2_grpc
 import time
-import traceback
 from src.task_manager.task_manager import TaskManager
 from src.config.config import Config
 from src.wrapper import mmaction2_recognizer
@@ -25,14 +24,15 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
         try:
             task_id = request.taskId
             image_id = request.imageId
-            assert task_id in task_manager.tasks, 'ERROR: The task ID does not exist.\n'
+            if task_id not in task_manager.tasks:
+                raise ValueError('Error: The task ID does not exist.\n')
             recognizer = task_manager.tasks[task_id].recognizer
             image_id_exist = recognizer.check_image_id_exist(image_id)
             if not image_id_exist:
                 task_manager.tasks[task_id].image_id_queue.put(image_id)
         except Exception as e:
             response.response.code = 400
-            response.response.message = traceback.format_exc()
+            response.response.message = str(e)
             return response
 
         response.response.code = response_code
@@ -54,16 +54,18 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
         response = behavior_recognition_pb2.GetResultByImageIdResponse()
         try:
             task_id = request.taskId
+            if task_id not in task_manager.tasks:
+                raise ValueError('Error: The task ID does not exist.\n')
             image_id = request.imageId
-            assert task_id in task_manager.tasks, 'ERROR: The task ID does not exist.\n'
             recognizer = task_manager.tasks[task_id].recognizer
-            assert recognizer.check_image_id_exist(image_id), 'ERROR: The image ID does not exit.\n'   
-            assert recognizer.get_step_by_image_id(image_id) == 0, 'ERROR: Image recognition incomplete.\n'  
+            if not recognizer.check_image_id_exist(image_id):
+                raise ValueError('Error: The image ID does not exit.')
+            if recognizer.get_step_by_image_id(image_id) != mmaction2_recognizer.BEHIAVIOR_RECOGNIZE_COMPLETE:
+                raise RuntimeError('Error: Image recognition incomplete.')
             image_info = recognizer.get_image_info_by_image_id(image_id)
-            assert image_info is not None,  'ERROR: Get image info failed.\n'  
         except Exception as e:
             response.response.code = 400
-            response.response.message = traceback.format_exc()
+            response.response.message = str(e)
             return response
 
         response.response.code = response_code
@@ -98,15 +100,14 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
         response = behavior_recognition_pb2.GetLatestResultResponse()
         try:
             task_id = request.taskId
-            assert task_id in task_manager.tasks, 'ERROR: The task ID does not exist.\n'
+            if task_id not in task_manager.tasks:
+                raise ValueError('Error: The task ID does not exist.\n')
             recognizer = task_manager.tasks[task_id].recognizer
             latest_predict_completed_image_id = recognizer.latest_predict_completed_image_id
             latest_add_image_id = recognizer.latest_add_image_id
             
             latest_predict_completed_image_info = recognizer.get_image_info_by_image_id(latest_predict_completed_image_id)
             latest_add_image_info = recognizer.get_image_info_by_image_id(latest_add_image_id)
-            assert latest_predict_completed_image_info is not None,  'ERROR: Get latest_predict_completed_image_info failed.\n'  
-            assert latest_add_image_info is not None,  'ERROR: Get latest_add_image_info failed.\n'  
             
             # 设置超时时间为 1 秒
             timeout = 1
@@ -120,7 +121,7 @@ class BehaviorRecognitionServer(behavior_recognition_pb2_grpc.CommunicateService
             
         except Exception as e:
             response.response.code = 400
-            response.response.message = traceback.format_exc()
+            response.response.message = str(e)
             return response
 
         response.response.code = response_code

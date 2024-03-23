@@ -188,11 +188,10 @@ class Mmaction2Recognizer:
             int: 阶段ID, 特殊的： -1图像不存在 0检测完成
         """
         if not self.check_image_id_exist(image_id):
-            warnings.warn("image_id 不存在", UserWarning)
-            return -1
+            raise ValueError(f'image id {image_id} not found')
         return self.__image_infos[image_id].step
     
-    def add_image_id(self, image_id: int) -> bool:
+    def add_image_id(self, image_id: int) -> None:
         """添加图像id
 
         Args:
@@ -202,8 +201,8 @@ class Mmaction2Recognizer:
             bool: 是否添加成功
         """
         if self.check_image_id_exist(image_id):
-            warnings.warn("image_id 重复添加", UserWarning)
-            return False
+            raise ValueError('Error: Image ID added repeatedly')
+
         # 清理溢出
         if (len(self.__image_infos) >= self.__window_size):
             image_id_rm = self.__image_id_queue.dequeue()
@@ -213,9 +212,8 @@ class Mmaction2Recognizer:
         self.__image_infos[image_id] = Mmaction2Recognizer.ImageInfo()
         self.__image_infos[image_id].step = ADD_IMAGE_ID_COMPLETE
         self.latest_add_image_id = image_id
-        return True
     
-    def add_image(self, image_id: int, image: np.ndarray) -> bool:
+    def add_image(self, image_id: int, image: np.ndarray) -> None:
         """添加图像
 
         Args:
@@ -228,9 +226,7 @@ class Mmaction2Recognizer:
         if not self.check_image_id_exist(image_id):
             self.add_image_id(image_id)
         elif self.__image_infos[image_id].step != ADD_IMAGE_ID_COMPLETE:
-            print(self.__image_infos[image_id].step)
-            warnings.warn("步骤顺序错误", UserWarning)
-            return False
+            raise RuntimeError('Error: Wrong step sequence')
         
         # 标记状态
         self.__image_infos[image_id].step = ADD_IMAGE_START
@@ -265,9 +261,8 @@ class Mmaction2Recognizer:
         
         # 标记状态
         self.__image_infos[image_id].step = ADD_IMAGE_COMPLETE
-        return True
     
-    def add_person_bboxes(self, image_id: int, person_bboxes: Dict[int, List[float]]) -> bool:
+    def add_person_bboxes(self, image_id: int, person_bboxes: Dict[int, List[float]]) -> None:
         """添加人的bboxes
 
         Args:
@@ -279,12 +274,9 @@ class Mmaction2Recognizer:
         """
         # 先检查步骤是否正确
         if not self.check_image_id_exist(image_id):
-            warnings.warn(f"image id {image_id} not found", UserWarning)
-            return False
+            raise ValueError(f'image id {image_id} not found')
         if self.__image_infos[image_id].step != ADD_IMAGE_COMPLETE:
-            print(self.__image_infos[image_id].step)
-            warnings.warn("步骤顺序错误", UserWarning)
-            return False
+            raise RuntimeError('Error: Wrong step sequence')
         self.__image_infos[image_id].step = ADD_BBOXES_START
         self.__image_infos[image_id].origin_person_bboxes = copy.deepcopy(person_bboxes)
         h, w, _ = self.__image_infos[image_id].image.shape
@@ -299,7 +291,9 @@ class Mmaction2Recognizer:
             self.__image_infos[image_id].processed_person_bboxes[person_id] = bboxes
         
         self.__image_infos[image_id].step = ADD_BBOXES_COMPLETE
-        return True
+    
+    def ready(self) -> bool:
+        return len(self.__image_infos) == self.__window_size
     
     def get_key_image_id(self) -> int:
         """获取关键帧的图像id
@@ -308,35 +302,30 @@ class Mmaction2Recognizer:
             int: 关键帧的图像id, 如果是0则是还未生成关键帧
         """
         if len(self.__image_infos) != self.__window_size:
-            warnings.warn(f"图像缓存数量不足，需要 {self.__window_size}，当前 {len(self.__image_infos)}", UserWarning)
-            return 0
+            raise RuntimeError(f"Insufficient image cache quantity, requires {self.__window_size}, current {len(self.__image_infos)}")
+
         key_image_id = self.__image_id_queue[self.__window_size // 2]
         return key_image_id
     
-    def predict_by_image_id(self, key_image_id: int) -> bool:
+    def predict_by_image_id(self, key_image_id: int) -> None:
         """根据图像id进行预测, 目前仅支持输入当前队列的关键帧
 
         Args:
             key_image_id (int): 关键帧的图像id
 
-        Returns:
-            bool: 是否检测成功
         """
         if not self.check_image_id_exist(key_image_id):
-            warnings.warn(f"image id {key_image_id} not found", UserWarning)
-            return False
+            raise ValueError(f'image id {key_image_id} not found')
         if self.__image_infos[key_image_id].step != ADD_BBOXES_COMPLETE:
-            print(self.__image_infos[key_image_id].step)
-            warnings.warn("步骤顺序错误", UserWarning)
-            return False
+            raise RuntimeError('Error: Wrong step sequence')
+
         self.__image_infos[key_image_id].step = BEHIAVIOR_RECOGNIZE_START
         
         if len(self.__image_infos) != self.__window_size:
-            warnings.warn(f"图像缓存数量不足，需要 {self.__window_size}，当前 {len(self.__image_infos)}", UserWarning)
-            return False
+            raise RuntimeError(f"Insufficient image cache quantity, requires {self.__window_size}, current {len(self.__image_infos)}")
         
         if 0 == len(self.__image_infos[key_image_id].processed_person_bboxes):
-            return True
+            return
         
         with torch.no_grad():
             cur_frames = self.__processed_images[self.__frame_pos].to_list()
@@ -372,7 +361,6 @@ class Mmaction2Recognizer:
             key_image_info.preds[person_id] = preds[idx]
         self.latest_predict_completed_image_id = key_image_id
         key_image_info.step = BEHIAVIOR_RECOGNIZE_COMPLETE
-        return True
         
     def get_result_by_image_id(self, image_id: int) -> Dict[int, List[Tuple[str, float]]]:
         """根据图像id获取结果
@@ -402,6 +390,5 @@ class Mmaction2Recognizer:
             ImageInfo: 图像信息
         """
         if not self.check_image_id_exist(image_id):
-            warnings.warn(f"image id {image_id} not found", UserWarning)
-            return None
+            raise ValueError(f"image id {image_id} not found")
         return self.__image_infos[image_id]
